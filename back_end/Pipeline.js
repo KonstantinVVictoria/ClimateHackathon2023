@@ -1,8 +1,8 @@
 const AgentFactory = require("@adasuite/agentgpt");
 const fetch = require("node-fetch");
 const Recruit = AgentFactory({
-  API_KEY: "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",
-  ORG_KEY: "org-9zmpMvPhAdZm5BKT6oYVj6Gh",
+  API_KEY: "<key>",
+  ORG_KEY: "<org_id>",
 });
 const Analysis = {};
 
