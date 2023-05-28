@@ -112,11 +112,11 @@ if submit_button:
     st.write("Creating First Draft...")
     response = requests.post("http://localhost:8000/generate_first_draft", data=template)
     st.empty()
-    first_draft = json.loads(response.content.decode())
-    print(first_draft)
+    lesson_plan = json.loads(response.content.decode())
+    print(lesson_plan)
 
     st.write("Deriving Topics...")
-    response = requests.post("http://localhost:8000/derive_topics", data=first_draft)
+    response = requests.post("http://localhost:8000/derive_topics", data=lesson_plan)
     st.empty()
     topics = json.loads(response.content.decode())
     print(topics)
@@ -127,7 +127,7 @@ if submit_button:
     sources = json.loads(response.content.decode())
     print(sources)
 
-    checker_data = {"truths":json.dumps(sources), "lesson_plan":json.dumps(first_draft)}
+    checker_data = {"truths":json.dumps(sources), "lesson_plan":json.dumps(lesson_plan)}
     response = requests.post("http://localhost:8000/revise_truth", data=checker_data)
     st.empty()
     second_draft = json.loads(response.content.decode())
@@ -139,9 +139,19 @@ if submit_button:
     analysis = json.loads(response.content.decode())
     print(analysis)
 
+    st.write("Writing final draft...")
+    revision_data = {"lesson_plan":json.dumps(second_draft), "recommendation":json.dumps(analysis)}
+    response = requests.post("http://localhost:8000/improve", data=revision_data)
+    st.empty()
+
+    # Create a new Word document
+    final_draft = json.loads(response.content.decode())
+
+    # Create a new Word document
     doc = Document()
+
     # Add a section to the Word document for each item in the final_draft
-    for key, value in first_draft.items():
+    for key, value in final_draft.items():
         doc.add_heading(key.replace('_', ' ').title(), level=1)
         if isinstance(value, list):
             for item in value:
@@ -153,61 +163,14 @@ if submit_button:
     b = BytesIO()
     doc.save(b)
     b.seek(0)
+
     # Create a download link for the Word document
     button = st.download_button(
         label="Download Word document",
         data=b,
         file_name='document.docx',
         mime='application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-        key="45"
     )
-    edit_button = st.button(label='Generate',
-            key="48")
-    edits = st_tags(
-        label='Enter a list of edits',
-        text='[edit1, edit2, ...]',
-        value=[],
-        suggestions=[],
-        maxtags=10,
-        key='49'
-    )
-    
-    if edit_button:
-        edit_button.empty()
-        edits.empty()
-        st.write("Writing final draft...")
-        revision_data = {"lesson_plan":json.dumps(second_draft), "recommendation":json.dumps(analysis),"edits":json.dumps(edits)}
-        response = requests.post("http://localhost:8000/improve", data=revision_data)
-        st.empty()
-
-        # Create a new Word document
-        final_draft = json.loads(response.content.decode())
-
-        # Create a new Word document
-        doc = Document()
-
-        # Add a section to the Word document for each item in the final_draft
-        for key, value in final_draft.items():
-            doc.add_heading(key.replace('_', ' ').title(), level=1)
-            if isinstance(value, list):
-                for item in value:
-                    doc.add_paragraph(item)
-            else:
-                doc.add_paragraph(value)
-
-        # Save the Word document to a BytesIO object
-        b = BytesIO()
-        doc.save(b)
-        b.seek(0)
-
-        # Create a download link for the Word document
-        button = st.download_button(
-            label="Download Word document",
-            data=b,
-            file_name='document.docx',
-            mime='application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-            key="46"
-        )
 
 json_data = """
 {
